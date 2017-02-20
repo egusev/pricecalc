@@ -3,6 +3,7 @@ package ru.erfolk.pricecalc.dtos;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -18,10 +19,8 @@ public class PriceCalcResponseDTO {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Date date = null;
 
-    // I'll prefer use the BigDecimal for currency, amounts etc
-    // but the requirement says about the double format. ok, let it be
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    private Double price = null;
+    private BigDecimal price = null;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private List<String> messages = new LinkedList<>();

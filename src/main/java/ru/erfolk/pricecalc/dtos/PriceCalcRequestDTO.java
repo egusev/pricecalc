@@ -23,9 +23,9 @@ public class PriceCalcRequestDTO {
     @DecimalMax("100.0")
     private BigDecimal value;
 
-    // don't know the valid values range. but still. let it be 0-100. can be removed without any issue
+    // don't know the valid values range. but still. let it be 0-10000. can be removed without any issue
     @NotNull
     @DecimalMin("0.0")
-    @DecimalMax("100.0")
+    @DecimalMax("10000.0")
     private BigDecimal volatility;
 }
