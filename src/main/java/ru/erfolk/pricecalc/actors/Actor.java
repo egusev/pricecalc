@@ -1,7 +1,6 @@
 package ru.erfolk.pricecalc.actors;
 
 import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,12 +15,8 @@ public class Actor implements UserDetails {
     @Getter
     private User user;
 
-    @Getter
-    @Setter
     private long lastRequest = 0;
 
-    @Getter
-    @Setter
     private int requests;
 
     public Actor(User user) {
@@ -61,5 +56,21 @@ public class Actor implements UserDetails {
     @Override
     public boolean isEnabled() {
         return true;
+    }
+
+    public synchronized boolean canProcess() {
+        long current = System.currentTimeMillis();
+        if (lastRequest / 1000 != current / 1000) {
+            log.debug("Reset the request count");
+
+            resetCounter();
+            lastRequest = current;
+        }
+
+        return ++requests <= user.getRequestPerSecond();
+    }
+
+    public synchronized void resetCounter() {
+        requests = 0;
     }
 }

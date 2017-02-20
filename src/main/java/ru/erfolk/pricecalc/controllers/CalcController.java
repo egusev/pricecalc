@@ -36,21 +36,13 @@ public class CalcController {
     @RequestMapping(value = Endpoints.PRICE_CALC, method = RequestMethod.PUT)
     public DeferredResult<PriceCalcResponseDTO> calculatePrice(@AuthenticationPrincipal Actor actor,
                                                                @Valid @RequestBody PriceCalcRequestDTO dto) {
-        long current = System.currentTimeMillis();
-        if (actor.getLastRequest() / 1000 != current / 1000) {
-            actor.setRequests(1);
-        }
-        else {
-            actor.setRequests(actor.getRequests() + 1);
-        }
-
-        if (actor.getUser().getRequestPerSecond() >= actor.getRequests()) {
+        if (actor.canProcess()) {
             Calculator calculator = calculatorService.calculate(dto.getIsin(), dto.getValue(), dto.getVolatility());
             return asyncManager.asyncCalculation(calculator);
 
-        }
-        else {
-            DeferredResult<PriceCalcResponseDTO>  result = new DeferredResult<>();
+        } else {
+//            log.warn("Request count {} is exceeded {}", actor.getUser().getRequestPerSecond(), actor.getRequests());
+            DeferredResult<PriceCalcResponseDTO> result = new DeferredResult<>();
             PriceCalcResponseDTO responseDTO = new PriceCalcResponseDTO();
             responseDTO.setDate(new Date());
             responseDTO.setSuccess(false);
