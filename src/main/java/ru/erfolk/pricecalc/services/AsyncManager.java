@@ -43,7 +43,7 @@ public class AsyncManager {
             dto.setPrice(function.get(TIMEOUT, TimeUnit.MILLISECONDS));
             dto.setSuccess(true);
         } catch( TimeoutException e) {
-            log.warn("Calculation time is out", e);
+//            log.warn("Calculation time is out", e);
             dto.setSuccess(false);
             dto.addMessage("Calculation time is out");
         } catch (ExecutionException | InterruptedException e) {
