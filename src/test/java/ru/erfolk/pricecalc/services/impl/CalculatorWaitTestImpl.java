@@ -24,7 +24,7 @@ public class CalculatorWaitTestImpl implements Calculator {
     @Override
     public BigDecimal calculate() {
         try {
-            log.warn("sleep for {} s", volatility.longValue());
+            log.debug("sleep for {} s", volatility.longValue());
             Thread.sleep(volatility.longValue());
             return value;
         } catch (InterruptedException e) {

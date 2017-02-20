@@ -1,5 +1,6 @@
 package ru.erfolk.pricecalc.controllers;
 
+import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -9,6 +10,9 @@ import org.springframework.test.context.junit4.SpringRunner;
 import ru.erfolk.pricecalc.dtos.PriceCalcResponseDTO;
 
 import java.math.BigDecimal;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
@@ -17,17 +21,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * Created by eugene on 20.02.17.
  */
+@Slf4j
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test-sleeping")
 public class CalcControllerTimeoutTest extends AbstractCalcControllerTest {
+
     @Test
     public void testLongValidRequests() throws Exception {
         PriceCalcResponseDTO responseDTO;
 
         responseDTO = (PriceCalcResponseDTO) mvc.perform(
                 calcRequest()
-                        .content("{\"isin\":\"123456789012\",\"value\":\"10\",\"volatility\":\"2990\"}")
+                        .content("{\"isin\":\"123456789012\",\"value\":\"10\",\"volatility\":\"990\"}")
         )
                 .andDo(print())
                 .andExpect(status().isOk())
@@ -46,7 +52,7 @@ public class CalcControllerTimeoutTest extends AbstractCalcControllerTest {
 
         responseDTO = (PriceCalcResponseDTO) mvc.perform(
                 calcRequest()
-                        .content("{\"isin\":\"123456789012\",\"value\":\"10\",\"volatility\":\"3010\"}")
+                        .content("{\"isin\":\"123456789012\",\"value\":\"10\",\"volatility\":\"1100\"}")
         )
                 .andDo(print())
                 .andExpect(status().isOk())
@@ -58,6 +64,70 @@ public class CalcControllerTimeoutTest extends AbstractCalcControllerTest {
         Assert.assertEquals(1, responseDTO.getMessages().size());
         Assert.assertEquals("Calculation time is out", responseDTO.getMessages().get(0));
         Assert.assertTrue((System.currentTimeMillis() - responseDTO.getDate().getTime()) < TIME_DIFF);
+    }
+
+    @Test
+    public void testValidManyCallsAtOnceRequests() throws Exception {
+        int[] errors = new int[]{0};
+        int size = 1000;
+
+        ExecutorService taskExecutor = Executors.newFixedThreadPool(size);
+
+        for (int i = 0; i < size; i++) {
+            taskExecutor.execute(() -> {
+                if (!balkCall(500)) {
+                    synchronized (errors) {
+                        errors[0]++;
+                    }
+                }
+            });
+        }
+        taskExecutor.shutdown();
+        try {
+            taskExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+        }
+        Assert.assertEquals(0, errors[0]);
+    }
+
+
+    @Test
+    public void testInvalidManyCallsAtOnceRequests() throws Exception {
+        int[] errors = new int[]{0};
+        int size = 1000;
+
+        ExecutorService taskExecutor = Executors.newFixedThreadPool(size);
+
+        for (int i = 0; i < size; i++) {
+            taskExecutor.execute(() -> {
+                if (!balkCall(2000)) {
+                    synchronized (errors) {
+                        errors[0]++;
+                    }
+                }
+            });
+        }
+        taskExecutor.shutdown();
+        try {
+            taskExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+        }
+        Assert.assertEquals(1000, errors[0]);
+    }
+
+    private boolean balkCall(long pause) {
+        try {
+            PriceCalcResponseDTO responseDTO = (PriceCalcResponseDTO) mvc.perform(
+                    calcRequest()
+                            .content("{\"isin\":\"123456789012\",\"value\":\"10\",\"volatility\":\"" + pause + "\"}")
+            )
+                    .andExpect(status().isOk())
+                    .andExpect(request().asyncStarted())
+                    .andReturn().getAsyncResult();
+            return responseDTO.isSuccess();
+        } catch (Throwable e) {
+            return false;
+        }
     }
 
 }

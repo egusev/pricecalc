@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.async.DeferredResult;
 import ru.erfolk.pricecalc.dtos.PriceCalcResponseDTO;
 
+import javax.annotation.PostConstruct;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.concurrent.*;
@@ -23,6 +24,11 @@ public class AsyncManager {
     @Value("${calculation.timeout}")
     private Integer TIMEOUT;
 
+    @PostConstruct
+    public void setup() {
+        log.info("calculation time out is {}", TIMEOUT);
+    }
+
     public DeferredResult<PriceCalcResponseDTO> asyncCalculation(Calculator calculator) {
         final DeferredResult<PriceCalcResponseDTO> result = new DeferredResult<>();
         final Future<BigDecimal> future = executor.submit(calculator::calculate);
@@ -37,7 +43,7 @@ public class AsyncManager {
             dto.setPrice(function.get(TIMEOUT, TimeUnit.MILLISECONDS));
             dto.setSuccess(true);
         } catch( TimeoutException e) {
-            log.warn(e.getMessage(), e);
+            log.warn("Calculation time is out", e);
             dto.setSuccess(false);
             dto.addMessage("Calculation time is out");
         } catch (ExecutionException | InterruptedException e) {
