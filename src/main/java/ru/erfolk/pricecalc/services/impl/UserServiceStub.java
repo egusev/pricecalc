@@ -18,8 +18,9 @@ public class UserServiceStub implements UserService {
 
     private static final User[] USERS = {
             new User("user1", "password", 10),
-            new User("user2", "password", 100),
-            new User("user3", "password", 1000),
+            new User("user2", "password", 20),
+            new User("user3", "password", 50),
+            new User("user4", "password", 10000),
     };
 
     private static final Map<String, Actor> USER_MAP = Arrays.stream(USERS).collect(Collectors.toMap(User::getUsername, Actor::new));

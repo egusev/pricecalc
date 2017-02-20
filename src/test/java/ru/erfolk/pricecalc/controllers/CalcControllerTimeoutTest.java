@@ -14,7 +14,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -35,7 +34,7 @@ public class CalcControllerTimeoutTest extends AbstractCalcControllerTest {
                 calcRequest()
                         .content("{\"isin\":\"123456789012\",\"value\":\"10\",\"volatility\":\"990\"}")
         )
-                .andDo(print())
+//                .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(request().asyncStarted())
                 .andReturn().getAsyncResult();
@@ -54,7 +53,7 @@ public class CalcControllerTimeoutTest extends AbstractCalcControllerTest {
                 calcRequest()
                         .content("{\"isin\":\"123456789012\",\"value\":\"10\",\"volatility\":\"1100\"}")
         )
-                .andDo(print())
+//                .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(request().asyncStarted())
                 .andReturn().getAsyncResult();
@@ -69,13 +68,13 @@ public class CalcControllerTimeoutTest extends AbstractCalcControllerTest {
     @Test
     public void testValidManyCallsAtOnceRequests() throws Exception {
         int[] errors = new int[]{0};
-        int size = 1000;
+        int size = 100;
 
         ExecutorService taskExecutor = Executors.newFixedThreadPool(size);
 
         for (int i = 0; i < size; i++) {
             taskExecutor.execute(() -> {
-                if (!balkCall(500)) {
+                if (!fastCall(400)) {
                     synchronized (errors) {
                         errors[0]++;
                     }
@@ -94,13 +93,13 @@ public class CalcControllerTimeoutTest extends AbstractCalcControllerTest {
     @Test
     public void testInvalidManyCallsAtOnceRequests() throws Exception {
         int[] errors = new int[]{0};
-        int size = 1000;
+        int size = 100;
 
         ExecutorService taskExecutor = Executors.newFixedThreadPool(size);
 
         for (int i = 0; i < size; i++) {
             taskExecutor.execute(() -> {
-                if (!balkCall(2000)) {
+                if (!fastCall(2000)) {
                     synchronized (errors) {
                         errors[0]++;
                     }
@@ -112,10 +111,10 @@ public class CalcControllerTimeoutTest extends AbstractCalcControllerTest {
             taskExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
         }
-        Assert.assertEquals(1000, errors[0]);
+        Assert.assertEquals(100, errors[0]);
     }
 
-    private boolean balkCall(long pause) {
+    private boolean fastCall(long pause) {
         try {
             PriceCalcResponseDTO responseDTO = (PriceCalcResponseDTO) mvc.perform(
                     calcRequest()

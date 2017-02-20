@@ -39,7 +39,7 @@ abstract class AbstractCalcControllerTest {
     }
 
     protected final MockHttpServletRequestBuilder calcRequest() {
-        return calcRequest("user3");
+        return calcRequest("user4");
     }
 
     protected final MockHttpServletRequestBuilder calcRequest(String user) {
